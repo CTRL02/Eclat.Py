@@ -2,4 +2,3 @@ pandas
 lxml
 openpyxl
 xlrd 
-collections 

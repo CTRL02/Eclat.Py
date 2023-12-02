@@ -3,10 +3,7 @@ from collections import defaultdict
 from collections import Counter
 from itertools import chain, combinations
 
-# supp = input("Enter Min Support:  ")
-# conf = input("Enter Min Confidence:    ")
-# min_supp = int(supp)
-# min_conf = float(conf)
+
 min_supp = 3
 min_conf = 0.7
 rules_list = []
@@ -92,17 +89,23 @@ def eclat(dataframe, minsup, minconf):
 
 def convert_to_vertical(dataframe):
     inverted_index = defaultdict(list)
+    letters = []
     for index, row in dataframe.iterrows():
         # tid 1
         transaction_id = row.iloc[0]
         # monkey
         items = row.iloc[1:]
         for item in items:
+
             if pd.notna(item):
                 item = str(item).strip()
+                # print(item)
                 #get each letter from monkey
-                letters = [letter for letter in item if letter.strip() and letter != ',']
-                for letter in letters:
+                string_list = item.split(',')
+                string_list = [s.strip() for s in string_list]
+                # print(string_list)
+                for letter in string_list:
+                    # print(letter)
                     found = False
                     for tid in inverted_index[letter]:
                         if tid == transaction_id:
@@ -125,8 +128,8 @@ if headers[0].lower() == "tid":
 else:
     vertical_df = df
 
-# print("Our vertical data:   ")
-# print(vertical_df)
+print("Our vertical data:   ")
+print(vertical_df)
 frequent_items = eclat(vertical_df, min_supp, min_conf)
 print(frequent_items)
 # print("Our frequent items:   ")
@@ -135,27 +138,27 @@ for item in frequent_items:
     if len(item[0]) >= 2:
         generate_association_rules(item[0])
 
-# print("Our Association rules are:   ")
-# print(rules_list)
-# for item in rules_list:
-#     allItems = Getsupp(vertical_df, item)
-#     left = Getsupp(vertical_df, item[0])
-#     print(item, ": its confidence value:  ", float(allItems / left))
-#     # all_confidence.append(float(allItems / left))
-#     if float(allItems / left) >= min_conf:
-#         strong_list.append(item)
+print("Our Association rules are:   ")
+print(rules_list)
+for item in rules_list:
+    allItems = Getsupp(vertical_df, item)
+    left = Getsupp(vertical_df, item[0])
+    print(item, ": its confidence value:  ", float(allItems / left))
+    # all_confidence.append(float(allItems / left))
+    if float(allItems / left) >= min_conf:
+        strong_list.append(item)
 
-# print("The Strong rules are: ", strong_list)
+print("The Strong rules are: ", strong_list)
 new_list = []
 for item in rules_list:
     reversed_item = (item[1], item[0])
     if reversed_item not in new_list:
         new_list.append(item)
 #
-# for item in new_list:
-#     if getLift(vertical_df, item) > 1:
-#         print(item, "is dependent and +ve correlated with lift value:    ", getLift(vertical_df, item))
-#     elif getLift(vertical_df, item) < 1:
-#         print(item, "is dependent and -ve correlated with lift value:    ", getLift(vertical_df, item))
-#     else:
-#         print(item, "is independent with lift value:    ", getLift(vertical_df, item))
+for item in new_list:
+    if getLift(vertical_df, item) > 1:
+        print(item, "is dependent and +ve correlated with lift value:    ", getLift(vertical_df, item))
+    elif getLift(vertical_df, item) < 1:
+        print(item, "is dependent and -ve correlated with lift value:    ", getLift(vertical_df, item))
+    else:
+        print(item, "is independent with lift value:    ", getLift(vertical_df, item))

@@ -3,9 +3,10 @@ from collections import defaultdict
 from collections import Counter
 from itertools import chain, combinations
 
-
-min_supp = 3
-min_conf = 0.7
+sup = input("Enter Sup   ")
+conf = input("Enter Conf  ")
+min_supp = int(sup)
+min_conf = float(conf)
 rules_list = []
 strong_list = []
 
@@ -14,12 +15,15 @@ strong_list = []
 
 
 def getLift(dataframe, items):
-    num_rows = dataframe.shape[0]
+    max_transactions = 0
+    for item in dataframe:
+        if max(dataframe[item]) > max_transactions:
+            max_transactions = max(dataframe[item])
     leftr = items[0]
     right = items[1]
-    union = float(Getsupp(dataframe, items) / num_rows)
-    result1 = float(Getsupp(dataframe, leftr) / num_rows)
-    result2 = float(Getsupp(dataframe, right) / num_rows)
+    union = float(Getsupp(dataframe, items) / max_transactions)
+    result1 = float(Getsupp(dataframe, leftr) / max_transactions)
+    result2 = float(Getsupp(dataframe, right) / max_transactions)
     return float(union / (result1 * result2))
 
 
@@ -48,7 +52,6 @@ def Getsupp(dataframe, items):
     else:
         listItem = items
 
-    # print(listItem)
     all_trans = []
     supp = 0
     # ['a','b','c']
@@ -87,6 +90,23 @@ def eclat(dataframe, minsup, minconf):
     return frequent_itemsets
 
 
+def fixVertical(dataframe):
+    inverted_index = defaultdict(list)
+
+    for index, row in dataframe.iterrows():
+        current_item = str(row.iloc[0])
+        transaction_ids = str(row.iloc[1]).split(',')
+        for transaction_id in transaction_ids:
+            if pd.notna(current_item) and pd.notna(transaction_id):
+                inverted_index[current_item].append(transaction_id.strip())
+                # print(current_item)
+                # print(inverted_index[current_item])
+
+    vertical_dataframe = pd.DataFrame.from_dict(inverted_index, orient='index')
+    vertical_dataframe = vertical_dataframe.transpose().fillna(0).astype('int')
+    return vertical_dataframe
+
+
 def convert_to_vertical(dataframe):
     inverted_index = defaultdict(list)
     letters = []
@@ -100,7 +120,7 @@ def convert_to_vertical(dataframe):
             if pd.notna(item):
                 item = str(item).strip()
                 # print(item)
-                #get each letter from monkey
+                # get each letter from monkey
                 string_list = item.split(',')
                 string_list = [s.strip() for s in string_list]
                 # print(string_list)
@@ -113,24 +133,26 @@ def convert_to_vertical(dataframe):
                     if not found:
                         inverted_index[letter].append(transaction_id)
                     # print(letter, ": ", inverted_index[letter])
-
     vertical_dataframe = pd.DataFrame.from_dict(inverted_index, orient='index')
     vertical_dataframe = vertical_dataframe.transpose().fillna(0).astype(int)
     return vertical_dataframe
 
 
-file_path = 'Horizontal_Format.xlsx'
+file_path = 'horiTest.xlsx'
 df = pd.read_excel(file_path, engine='openpyxl')
+df = df.dropna(how='all')
+print(df)
 headers = df.columns.tolist()
 vertical_df = []
 if headers[0].lower() == "tid":
     vertical_df = convert_to_vertical(df)
 else:
-    vertical_df = df
+    vertical_df = fixVertical(df)
 
 print("Our vertical data:   ")
 print(vertical_df)
 frequent_items = eclat(vertical_df, min_supp, min_conf)
+print("Our Frequent items:     ")
 print(frequent_items)
 # print("Our frequent items:   ")
 # print(frequent_items)
@@ -143,7 +165,7 @@ print(rules_list)
 for item in rules_list:
     allItems = Getsupp(vertical_df, item)
     left = Getsupp(vertical_df, item[0])
-    print(item, ": its confidence value:  ", float(allItems / left))
+    # print(item, ": its confidence value:  ", float(allItems / left))
     # all_confidence.append(float(allItems / left))
     if float(allItems / left) >= min_conf:
         strong_list.append(item)
